@@ -18,7 +18,7 @@
   "scripts": {
     "bindata": "rollup -c && rm -rf public/*.map && go-bindata-assetfs -pkg integration public/ && mkdir -p dist && mv bindata_assetfs.go dist/",
     "build": "rollup -c",
-    "autobuild": "rollup -c -w",
+    "autobuild": "rollup -c --watch",
     "dev": "run-p start:dev autobuild",
     "start": "sirv public --single",
     "start:dev": "sirv public --single --dev"

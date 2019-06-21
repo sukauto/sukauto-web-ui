@@ -7,54 +7,26 @@
 <div class="container grid-xl">
 
 <div class="columns">
-    <div class="column col-4 col-lg-12">
-        <form class="form-horizontal">
-            <div class="form-group">
-                <label class="form-label" for="newName">Service name</label>
-                <input class="form-input" type="text" id="newName" bind:value="{newService.name}"
-                       placeholder="Service name">
-            </div>
-            <div class="form-group">
-                <label class="form-label" for="newCommand">Command</label>
-                <input class="form-input" type="text" id="newCommand" bind:value="{newService.command}"
-                       placeholder="Command">
-            </div>
-            <div class="form-group">
-                <h3>Environment</h3>
-                <table class="table">
-                    {#each environment as env}
-                        <tr>
-                            <td>{env.key}</td>
-                            <td>{env.value}</td>
-                            <td>
-                                <button type="button" class="btn btn-action" on:click="{()=> delEnv(env.key)}"><i
-                                        class="icon icon-delete"></i></button>
-                            </td>
-                        </tr>
-                    {/each}
-                    <tr>
-                        <td><input class="form-input" type="text" bind:value="{envKey}" placeholder="Key"></td>
-                        <td><input class="form-input" type="text" bind:value="{envValue}" placeholder="Value"></td>
-                        <td>
-                            <button type="button" class="btn btn-action" on:click="{addEnv}"><i
-                                    class="icon icon-plus"></i></button>
-                        </td>
-                    </tr>
-                </table>
-            </div>
-
-            <button class="btn tn-action"
-                    type="button"
-                    class:loading="{creating}"
-                    on:click="{()=>create()}">
-                <i class="icon icon-plus"></i> create
-            </button>
-        </form>
+<div class="column col-12">
+    <CreateService label="new service" active="{showCreateService}" on:done="{completeCreating}"></CreateService>
+    <AttachService active="{showAttaching}" on:done="{completeAttaching}"></AttachService>
+    <div class="dropdown">
+        <a href="#" class="btn btn-link dropdown-toggle" tabindex="0">
+            create <i class="icon icon-plus"></i>
+        </a>
+  <!-- menu component -->
+        <ul class="menu">
+            <li class="nav-item">
+                <a href="#" on:click|preventDefault="{()=>showCreateService=true}">new service</a>
+            </li>
+            <li>
+                <a href="#" on:click|preventDefault="{()=>showAttaching=true}">attach</a>
+            </li>
+        </ul>
     </div>
-<div class="column col-8 col-lg-12">
-{#if updating}
+    {#if updating}
         <div class="loading loading-lg"></div>
-{/if}
+    {/if}
 <table class="table">
     <thead>
     <tr>
@@ -64,14 +36,14 @@
     </tr>
     </thead>
 <tbody>
-{#each services as service}
+    {#each services as service}
     <tr>
         <td>
             <a href="{baseURL}monitor/log/{service.name}">{service.name}</a>
         </td>
         <td>{service.status}</td>
     <td>
-    {#if service.status !== 'dead'}
+        {#if service.status !== 'dead'}
     <button class="btn tn-action btn-primary"
             class:loading="{stoppingService[service.name]}"
             on:click="{()=>stop(service.name)}">
@@ -81,50 +53,37 @@
 <button class="btn tn-action"
         class:loading="{startingService[service.name]}"
         on:click="{()=>start(service.name)}">
-    <i class="icon icon-arrow-up"></i> start
-</button>
-{/if}
-    <button class="btn tn-action"
-            class:loading="{restartingService[service.name]}"
-            on:click="{()=>restart(service.name)}">
-        <i class="icon icon-refresh"></i> restart
+        <i class="icon icon-arrow-up"></i> start
     </button>
-</td>
-</tr>
-{/each}
-</tbody>
-</table>
-</div>
+    {/if}
+        <button class="btn tn-action"
+                class:loading="{restartingService[service.name]}"
+                on:click="{()=>restart(service.name)}">
+            <i class="icon icon-refresh"></i> restart
+        </button>
+    </td>
+    </tr>
+    {/each}
+    </tbody>
+    </table>
+    </div>
 
-</div>
-</div>
+    </div>
+    </div>
 <script>
-    let baseURL = BASE_URL;
+    import CreateService from './CreateService.svelte'
+    import AttachService from './AttachService.svelte'
+
+    const baseURL = process.env.BASE_URL;
+
     let services = [];
     let startingService = {};
     let stoppingService = {};
     let restartingService = {};
     let updating = false;
-    let creating = false;
-    let envKey = '';
-    let envValue = '';
-    let newService = {
-        name: '',
-        command: '',
-        environment: {}
-    };
-    let environment = [];
+    let showCreateService = false;
+    let showAttaching = false;
 
-    function delEnv(key) {
-        environment = environment.filter((e) => e.key !== key);
-    }
-
-    function addEnv() {
-        environment.push({key: envKey, value: envValue});
-        environment = environment;
-        envValue = '';
-        envKey = '';
-    }
 
     function updateServices() {
         updating = true;
@@ -189,29 +148,14 @@
         })
     }
 
-    function create() {
-        creating = true;
-        let env = {};
-        environment.forEach((e) => {
-            env[e.key] = e.value;
-        })
-        newService.environment = env;
-        fetch(baseURL + "monitor/create", {
-            method: "POST",
-            credentials: 'include',
-            body: JSON.stringify(newService),
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        }).then((data) => {
-            return updateServices()
-        }).finally(() => {
-            newService.command = '';
-            newService.name = '';
-            newService.environment = {};
-            environment = [];
-            creating = false;
-        })
+    function completeCreating(event) {
+        if (event.detail) updateServices();
+        showCreateService = false;
+    }
+
+    function completeAttaching(event) {
+        if (event.detail) updateServices();
+        showAttaching = false;
     }
 
     updateServices()
