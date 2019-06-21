@@ -40,6 +40,11 @@
                 {#each services as service, i (service.name)}
                     <tr>
                         <td>
+                            <Actions service="{service}" updating="{updating}"
+                                     on:begin="{()=> updating = true}"
+                                     on:success="{updateServices}"
+                                     on:fail="{()=> updating = false}">
+                            </Actions>
                             <a href="{baseURL}monitor/log/{service.name}">{service.name}</a>
                         </td>
                         <td>{service.status}</td>
@@ -57,16 +62,7 @@
                     <i class="icon icon-arrow-up"></i> start
                 </button>
                 {/if}
-                    <button class="btn tn-action"
-                            class:disabled="{updating}"
-                            on:click="{()=>restart(service)}">
-                        <i class="icon icon-refresh"></i> restart
-                    </button>
-                    <button class="btn tn-action"
-                            class:disabled="{updating}"
-                            on:click="{()=>update(service)}">
-                        <i class="icon icon-upload"></i> update
-                    </button>
+
                 </td>
                 </tr>
                 {/each}
@@ -79,6 +75,7 @@
 <script>
     import CreateService from './CreateService.svelte'
     import AttachService from './AttachService.svelte'
+    import Actions from './Actions.svelte'
 
     const baseURL = process.env.BASE_URL;
     const refreshInterval = 5000;
@@ -95,7 +92,6 @@
         setTimeout(scheduler, refreshInterval)
     }
 
-    //setTimeout(scheduler, refreshInterval);
 
     function updateServices() {
         updating = true;
@@ -114,35 +110,6 @@
         })
     }
 
-    function restart(srv) {
-        updating = true;
-        fetch(baseURL + "monitor/restart/" + encodeURIComponent(srv.name) + "?nocache=" + Date.now(), {
-            method: "GET",
-            credentials: 'include'
-        }).then((data) => {
-            if (!data.ok) {
-                return;
-            }
-            return updateServices();
-        }).finally(() => {
-            updating = false;
-        })
-    }
-
-    function update(srv) {
-        updating = true;
-        fetch(baseURL + "monitor/update/" + encodeURIComponent(srv.name) + "?nocache=" + Date.now(), {
-            method: "GET",
-            credentials: 'include'
-        }).then((data) => {
-            if (!data.ok) {
-                return;
-            }
-            return updateServices();
-        }).finally(() => {
-            updating = false;
-        })
-    }
 
     function start(srv) {
         updating = true;
@@ -154,7 +121,7 @@
                 return;
             }
             return updateServices();
-        }).finally(() => {
+        }).catch(() => {
             updating = false;
         })
     }
@@ -169,7 +136,7 @@
                 return;
             }
             return updateServices();
-        }).finally(() => {
+        }).catch(() => {
             updating = false;
         })
     }
