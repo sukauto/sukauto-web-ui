@@ -67,7 +67,8 @@
 
 <script>
     import {createEventDispatcher} from 'svelte';
-    const baseURL = process.env.BASE_URL;
+    import * as API from './api';
+
     const dispatch = createEventDispatcher();
 
     export let label = "create";
@@ -100,24 +101,13 @@
             env[e.key] = e.value;
         });
         newService.environment = env;
-        fetch(baseURL + "monitor/create", {
-            method: "POST",
-            credentials: 'include',
-            body: JSON.stringify(newService),
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        }).then((data) => {
-            dispatch('done', true);
-        }).catch(() => {
-            dispatch('done', false);
-        }).finally(() => {
+        API.create(newService).then(() => dispatch('done', true)).catch((e) => dispatch('done', false)).finally(() => {
             newService.command = '';
             newService.name = '';
             newService.environment = {};
             environment = [];
             creating = false;
-        })
+        });
     }
 
     function close() {

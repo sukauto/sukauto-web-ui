@@ -47,7 +47,13 @@
                             </Actions>
                             <a href="{baseURL}monitor/log/{service.name}">{service.name}</a>
                         </td>
-                        <td>{service.status}</td>
+                        <td
+                                class:text-light="{service.status === 'dead'}"
+                                class:text-success="{service.status ==='running'}"
+                                class:text-error="{service.status === 'failed' }"
+                        >
+                            <span class="p-1" class:bg-dark="{service.status === 'dead'}">{service.status}</span>
+                        </td>
                     <td>
                     {#if service.status !== 'dead'}
                     <button class="btn tn-action btn-primary"
@@ -76,69 +82,28 @@
     import CreateService from './CreateService.svelte'
     import AttachService from './AttachService.svelte'
     import Actions from './Actions.svelte'
+    import * as API from './api';
 
-    const baseURL = process.env.BASE_URL;
-    const refreshInterval = 5000;
-
+    const baseURL = API.baseURL;
     let services = [];
     let updating = false;
     let showCreateService = false;
     let showAttaching = false;
 
-    function scheduler() {
-        if (!updating && services.find((srv) => srv.loading)) {
-            updateServices()
-        }
-        setTimeout(scheduler, refreshInterval)
-    }
-
-
     function updateServices() {
         updating = true;
-        fetch(baseURL + "monitor/status?nocache=" + Date.now(), {
-            method: "GET",
-            credentials: 'include',
-        }).then((data) => {
-            if (!data.ok) {
-                return {services: []};
-            }
-            return data.json()
-        }).then((info) => {
-            services = info.services;
-        }).finally(() => {
-            updating = false;
-        })
+        API.statuses().then((list) => services = list).finally(() => updating = false);
     }
 
 
     function start(srv) {
         updating = true;
-        fetch(baseURL + "monitor/run/" + encodeURIComponent(srv.name) + "?nocache=" + Date.now(), {
-            method: "GET",
-            credentials: 'include'
-        }).then((data) => {
-            if (!data.ok) {
-                return;
-            }
-            return updateServices();
-        }).catch(() => {
-            updating = false;
-        })
+        API.start(srv.name).then(() => updateServices()).catch(() => updating = false);
     }
 
     function stop(srv) {
         updating = true;
-        fetch(baseURL + "monitor/stop/" + encodeURIComponent(srv.name) + "?nocache=" + Date.now(), {
-            method: "GET",
-            credentials: 'include'
-        }).then((data) => {
-            if (!data.ok) {
-                return;
-            }
-            return updateServices();
-        }).catch(() => {
-            updating = false;
-        })
+        API.stop(srv.name).then(() => updateServices()).catch(() => updating = false);
     }
 
     function completeCreating(event) {

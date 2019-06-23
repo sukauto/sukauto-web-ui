@@ -1,5 +1,5 @@
 <div class="dropdown">
-    <a href="#" class="btn btn-link btn-action dropdown-toggle" class:disabled="{updating}" tabindex="0">
+    <a class="btn btn-link btn-action dropdown-toggle" class:disabled="{updating}" tabindex="0">
         <i class="icon icon-menu"></i>
     </a>
     <ul class="menu">
@@ -22,55 +22,15 @@
 </div>
 <script>
     import {createEventDispatcher} from 'svelte';
+    import {simpleWrapperAPI} from "./utils";
+    import * as API from './api';
 
     const dispatch = createEventDispatcher();
 
     export let service = {};
     export let updating = false;
-    const baseURL = process.env.BASE_URL;
 
-    function restart() {
-        dispatch("begin", true);
-        fetch(baseURL + "monitor/restart/" + encodeURIComponent(service.name) + "?nocache=" + Date.now(), {
-            method: "GET",
-            credentials: 'include'
-        }).then((data) => {
-            if (!data.ok) {
-                return;
-            }
-            dispatch("success");
-        }).catch(() => {
-            dispatch("fail", false);
-        })
-    }
-
-    function forget() {
-        dispatch("begin", true);
-        fetch(baseURL + "monitor/forget/" + encodeURIComponent(service.name) + "?nocache=" + Date.now(), {
-            method: "GET",
-            credentials: 'include'
-        }).then((data) => {
-            if (!data.ok) {
-                return;
-            }
-            dispatch("success");
-        }).catch(() => {
-            dispatch("fail", false);
-        })
-    }
-
-    function update() {
-        dispatch("begin", true);
-        fetch(baseURL + "monitor/update/" + encodeURIComponent(service.name) + "?nocache=" + Date.now(), {
-            method: "GET",
-            credentials: 'include'
-        }).then((data) => {
-            if (!data.ok) {
-                return;
-            }
-            dispatch("success");
-        }).catch(() => {
-            dispatch("fail", false);
-        })
-    }
+    const restart = simpleWrapperAPI(() => API.restart(service.name), dispatch);
+    const forget = simpleWrapperAPI(() => API.forget(service.name), dispatch);
+    const update = simpleWrapperAPI(() => API.update(service.name), dispatch);
 </script>

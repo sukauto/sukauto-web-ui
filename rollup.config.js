@@ -17,7 +17,7 @@ export default {
     },
     plugins: [
         replace({
-            'process.env.BASE_URL': JSON.stringify(production ? '../' : 'http://localhost:9000/')
+            'process.env.BASE_URL': JSON.stringify(production ? '../' : 'http://localhost:8080/')
         }),
         svelte({
             // enable run-time checks when not in production
