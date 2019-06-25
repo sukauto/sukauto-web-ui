@@ -3,15 +3,15 @@
     <div class="modal-container">
         <div class="modal-header">
             <a class="btn btn-clear float-right" aria-label="Close" on:click="{close}"></a>
-            <div class="modal-title h5">New service</div>
+            <div class="modal-title h5">New group</div>
         </div>
         <div class="modal-body">
             <div class="content">
                 <form class="form-horizontal">
                     <div class="form-group">
-                        <label class="form-label" for="newName">Service name</label>
+                        <label class="form-label" for="newName">Group name</label>
                         <input class="form-input" type="text" id="newName" bind:value="{name}"
-                               placeholder="Service name">
+                               placeholder="Group name">
                     </div>
                 </form>
             </div>
@@ -28,8 +28,9 @@
 </div>
 <script>
     import {createEventDispatcher} from 'svelte';
-    import {shouldUpdateServices} from './stores'
-    import * as API from './api'
+    import {simpleWrapperAPI} from "./utils";
+    import {shouldUpdateGroups} from './stores'
+    import * as API from './api';
 
     export let active = false;
 
@@ -40,10 +41,11 @@
 
     function create() {
         creating = true;
-        API.attach(name).then(() => {
-            shouldUpdateServices.update((v) => !v);
+        API.createGroup(name).then(() => {
+            shouldUpdateGroups.update((v) => !v);
             close();
-        }).finally(() => creating = false);
+        }).finally(() => creating = false)
+
     }
 
     function close() {

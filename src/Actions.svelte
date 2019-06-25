@@ -22,15 +22,26 @@
 </div>
 <script>
     import {createEventDispatcher} from 'svelte';
-    import {simpleWrapperAPI} from "./utils";
     import * as API from './api';
+    import {shouldUpdateServices} from './stores'
 
     const dispatch = createEventDispatcher();
 
     export let service = {};
-    export let updating = false;
+    let updating = false;
 
-    const restart = simpleWrapperAPI(() => API.restart(service.name), dispatch);
-    const forget = simpleWrapperAPI(() => API.forget(service.name), dispatch);
-    const update = simpleWrapperAPI(() => API.update(service.name), dispatch);
+    function restart() {
+        updating = true;
+        API.restart(service.name).then(() => shouldUpdateServices.update((v) => !v)).finally(() => updating = false)
+    }
+
+    function forget() {
+        updating = true;
+        API.forget(service.name).then(() => shouldUpdateServices.update((v) => !v)).finally(() => updating = false)
+    }
+
+    function update() {
+        updating = true;
+        API.update(service.name).then(() => shouldUpdateServices.update((v) => !v)).finally(() => updating = false)
+    }
 </script>

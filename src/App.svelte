@@ -9,13 +9,14 @@
     <div class="columns">
         <div class="column col-12">
             <CreateService label="new service" active="{showCreateService}"
-                           on:done="{completeCreating}"></CreateService>
-            <AttachService active="{showAttaching}" on:done="{completeAttaching}"></AttachService>
+                           on:done="{()=>showCreateService = false}"></CreateService>
+            <AttachService active="{showAttaching}" on:done="{()=> showAttaching = false}"></AttachService>
+            <CreateGroup active="{showCreateGroup}" on:done="{()=> showCreateGroup = false}"></CreateGroup>
             <div class="dropdown">
                 <a href="#" class="btn btn-link dropdown-toggle" tabindex="0">
                     create <i class="icon icon-plus"></i>
                 </a>
-  <!-- menu component -->
+                <!-- menu component -->
                 <ul class="menu">
                     <li class="nav-item">
                         <a href="#" on:click|preventDefault="{()=>showCreateService=true}">new service</a>
@@ -23,100 +24,64 @@
                     <li>
                         <a href="#" on:click|preventDefault="{()=>showAttaching=true}">attach</a>
                     </li>
+                    <li>
+                        <a href="#" on:click|preventDefault="{()=>showCreateGroup=true}">new group</a>
+                    </li>
                 </ul>
             </div>
-            {#if updating}
+            {#if $updating}
                 <div class="loading loading-lg"></div>
             {/if}
-            <table class="table">
-                <thead>
-                <tr>
-                    <th>name</th>
-                    <th>status</th>
-                    <th>control</th>
-                </tr>
-                </thead>
-                <tbody>
-                {#each services as service, i (service.name)}
-                    <tr>
-                        <td>
-                            <Actions service="{service}" updating="{updating}"
-                                     on:begin="{()=> updating = true}"
-                                     on:success="{updateServices}"
-                                     on:fail="{()=> updating = false}">
-                            </Actions>
-                            <a href="{baseURL}monitor/log/{service.name}">{service.name}</a>
-                        </td>
-                        <td
-                                class:text-light="{service.status === 'dead'}"
-                                class:text-success="{service.status ==='running'}"
-                                class:text-error="{service.status === 'failed' }"
-                        >
-                            <span class="p-1" class:bg-dark="{service.status === 'dead'}">{service.status}</span>
-                        </td>
-                    <td>
-                    {#if service.status !== 'dead'}
-                    <button class="btn tn-action btn-primary"
-                            class:disabled="{updating}"
-                            on:click="{()=> stop(service)}">
-                        <i class="icon icon-stop"></i> stop
-                    </button>
-                {:else}
-                <button class="btn tn-action"
-                        class:disabled="{updating}"
-                        on:click="{()=>start(service)}">
-                    <i class="icon icon-arrow-up"></i> start
-                </button>
-                {/if}
-
-                </td>
-                </tr>
-                {/each}
-                </tbody>
-            </table>
+            <Services services="{$services}"></Services>
         </div>
 
     </div>
+    {#each $groups as group}
+
+        <div class="columns">
+            <div class="column col-12">
+                <Group group="{group}"></Group>
+            </div>
+        </div>
+    {/each}
 </div>
 <script>
     import CreateService from './CreateService.svelte'
     import AttachService from './AttachService.svelte'
+    import CreateGroup from './CreateGroup.svelte'
     import Actions from './Actions.svelte'
+    import Services from './Services.svelte'
+    import Controls from './lib/Controls.svelte'
+    import Group from './Group.svelte'
     import * as API from './api';
+    import {shouldUpdateServices, shouldUpdateGroups, groups, services, updating} from './stores'
 
     const baseURL = API.baseURL;
-    let services = [];
-    let updating = false;
+    let groupServices = {};
     let showCreateService = false;
+    let showCreateGroup = false;
     let showAttaching = false;
 
     function updateServices() {
-        updating = true;
-        API.statuses().then((list) => services = list).finally(() => updating = false);
+        updating.set(true);
+        API.statuses().then((list) => services.set(list)).finally(() => updating.set(false))
     }
 
-
-    function start(srv) {
-        updating = true;
-        API.start(srv.name).then(() => updateServices()).catch(() => updating = false);
+    function updateGroups() {
+        updating.set(true);
+        API.groups().then((list) => groups.set(list)).finally(() => updating.set(false));
     }
 
-    function stop(srv) {
-        updating = true;
-        API.stop(srv.name).then(() => updateServices()).catch(() => updating = false);
-    }
+    shouldUpdateServices.subscribe(() => {
+        updateServices()
+    });
 
-    function completeCreating(event) {
-        if (event.detail) updateServices();
-        showCreateService = false;
-    }
+    shouldUpdateGroups.subscribe(() => {
+        updateGroups();
+    });
 
-    function completeAttaching(event) {
-        if (event.detail) updateServices();
-        showAttaching = false;
-    }
-
-    updateServices()
+    updateServices();
+    updateGroups()
 
 </script>
 

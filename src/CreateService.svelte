@@ -68,6 +68,7 @@
 <script>
     import {createEventDispatcher} from 'svelte';
     import * as API from './api';
+    import {shouldUpdateServices} from "./stores";
 
     const dispatch = createEventDispatcher();
 
@@ -101,7 +102,10 @@
             env[e.key] = e.value;
         });
         newService.environment = env;
-        API.create(newService).then(() => dispatch('done', true)).catch((e) => dispatch('done', false)).finally(() => {
+        API.create(newService).then(() => {
+            shouldUpdateServices.update((v) => !v);
+            close()
+        }).catch((e) => dispatch('done', false)).finally(() => {
             newService.command = '';
             newService.name = '';
             newService.environment = {};
